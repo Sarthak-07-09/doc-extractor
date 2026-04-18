@@ -43,10 +43,12 @@ async function callWithRetry(contentsFn, retries = 8) {
   throw new Error('सध्या AI busy आहे. थोड्या वेळाने try करा.');
 }
 
-async function extractCSV(filePath) {
+async function extractCSV(fileBuffer) {
   return new Promise((resolve, reject) => {
     const results = [];
-    fs.createReadStream(filePath)
+    const { Readable } = require('stream');
+    const stream = Readable.from(fileBuffer.toString());
+    stream
       .pipe(csv())
       .on('data', (row) => results.push(row))
       .on('end', () => {
@@ -66,17 +68,14 @@ async function extractCSV(filePath) {
       .on('error', reject);
   });
 }
-
-async function extractData(filePath, mimeType) {
+async function extractData(fileBuffer, mimeType) {
   if (mimeType === 'text/csv') {
-    return await extractCSV(filePath);
+    return await extractCSV(fileBuffer);
   }
 
   if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-    const mammothResult = await mammoth.extractRawText({ path: filePath });
+    const mammothResult = await mammoth.extractRawText({ buffer: fileBuffer });
     const text = mammothResult.value;
-    const model = getModel();
-
     const prompt = `You are a document extraction expert.
 Extract all structured data from this document text.
 Return JSON format with fields like:
@@ -94,9 +93,7 @@ ${text}`;
     return jsonMatch ? JSON.parse(jsonMatch[0]) : { raw: aiText };
   }
 
-  const model = getModel();
-  const fileData = fs.readFileSync(filePath);
-  const base64 = fileData.toString('base64');
+  const base64 = fileBuffer.toString('base64');
 
   const prompt = `You are a document extraction expert.
 Extract all structured data from this document.
@@ -107,9 +104,9 @@ Return JSON format with fields like:
 Only return valid JSON, nothing else.`;
 
   const result = await callWithRetry(() => [
-  { inlineData: { data: base64, mimeType } },
-  prompt
-]);
+    { inlineData: { data: base64, mimeType } },
+    prompt
+  ]);
 
   const text = result.response.text();
   const jsonMatch = text.match(/\{[\s\S]*\}/);

@@ -14,7 +14,7 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowed = ['image/jpeg', 'image/png', 'application/pdf',
@@ -27,7 +27,7 @@ router.post('/', upload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
-    const extracted = await extractData(req.file.path, req.file.mimetype);
+    const extracted = await extractData(req.file.buffer, req.file.mimetype);
 
     const doc = Document.save({
       filename: req.file.originalname,
