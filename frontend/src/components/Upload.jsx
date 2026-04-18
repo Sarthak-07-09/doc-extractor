@@ -38,7 +38,7 @@ function Upload({ onUploadSuccess }) {
 
     try {
       setLoading(true);
-      const res = await axios.post('http://localhost:5000/api/upload', formData);
+      const res = await axios.post('https://doc-extractor-backend-qdzq.onrender.com/api/upload', formData);
       setSuccess('✅ File uploaded and data extracted!');
       onUploadSuccess(res.data.documentId, res.data.extractedData, true);
     } catch (err) {
