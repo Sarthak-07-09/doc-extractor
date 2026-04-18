@@ -2,7 +2,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const fs = require('fs');
 const csv = require('csv-parser');
 const mammoth = require('mammoth');
-require('dotenv').config();
+
 
 const apiKeys = [
   process.env.GEMINI_API_KEY_1,
